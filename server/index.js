@@ -1,11 +1,18 @@
-// server/index.js
-console.log("👋 index.js is running");
-
+import http from "http";
 import app from "./app.js";
+import { initPlantWebSocketServer } from "./ws/plantSocket.js";
 
 const PORT = process.env.PORT || 4000;
 
-app.listen(PORT, () => {
-  console.log(`✅ Server listening on port ${PORT}`);
-  console.log(`👉 http://localhost:${PORT}`);
+// Create server
+const server = http.createServer(app);
+
+// websocket
+initPlantWebSocketServer(server);
+
+// start websocket and server
+server.listen(PORT, () => {
+  console.log(`✅ HTTP+WS server listening on port ${PORT}`);
+  console.log(`👉 HTTP: http://localhost:${PORT}`);
+  console.log(`👉 WS:   ws://localhost:${PORT}/ws/plant`);
 });

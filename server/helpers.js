@@ -1,10 +1,5 @@
 import { unless } from "express-unless";
 import jwt from "jsonwebtoken";
-import db from "./models/index.js";
-
-// ----------------------------------------
-// 🧨 Custom Error Class
-// ----------------------------------------
 
 /**
  * Custom error for validation-related failures.
@@ -16,10 +11,6 @@ export class ValidationError extends Error {
     this.statusCode = statusCode;
   }
 }
-
-// ----------------------------------------
-// 🔐 JWT Parser Middleware
-// ----------------------------------------
 
 /**
  * Express middleware to verify JWTs from Authorization headers.
@@ -67,84 +58,8 @@ export const jwtParser = (req, res, next) => {
   });
 };
 
-// export const jwtParser = (req, res, next) => {
-//   console.log("🔎 [jwtParser] Incoming request:", {
-//     method: req.method,
-//     path: req.originalUrl,
-//     headers: req.headers,
-//   });
-
-//   // 1) Allow CORS preflight to pass
-//   if (req.method === "OPTIONS") {
-//     console.log("➡️ OPTIONS preflight detected, skipping auth.");
-//     return next();
-//   }
-
-//   // 2) API key bypass
-//   const apiKey = req.get("x-api-key");
-//   console.log("🔑 x-api-key header value:", apiKey);
-//   console.log("🔑 process.env.PI_API_KEY value:", process.env.PI_API_KEY);
-
-//   if (
-//     apiKey &&
-//     process.env.PI_API_KEY &&
-//     apiKey.trim() === String(process.env.PI_API_KEY).trim()
-//   ) {
-//     console.log("✅ API key matched. Bypassing JWT check.");
-//     req.tokenData = { authType: "apiKey" };
-//     return next();
-//   } else {
-//     if (!apiKey) console.log("❌ No x-api-key header provided.");
-//     else if (!process.env.PI_API_KEY)
-//       console.log("❌ process.env.PI_API_KEY not set.");
-//     else
-//       console.log(
-//         "❌ API key mismatch:",
-//         `"${apiKey.trim()}" !== "${String(process.env.PI_API_KEY).trim()}"`
-//       );
-//   }
-
-//   // 3) Bearer token
-//   const authHeader = req.get("authorization") || "";
-//   console.log("🪪 Authorization header:", authHeader);
-
-//   const match = authHeader.match(/^Bearer\s+(.+)$/i);
-//   if (match) {
-//     const token = match[1].trim();
-//     console.log("🪙 Extracted Bearer token:", token);
-
-//     return jwt.verify(token, process.env.JWT_KEY, (err, decoded) => {
-//       if (err) {
-//         console.log("❌ JWT verification failed:", err.message);
-//         return res.status(403).json({
-//           success: false,
-//           message:
-//             "Invalid Token: you are not authorized to view this content.",
-//         });
-//       }
-//       console.log("✅ JWT verified. Token data:", decoded);
-//       req.tokenData = decoded;
-//       return next();
-//     });
-//   }
-
-//   console.log("❌ No valid auth provided (API key or JWT). Returning 401.");
-//   return res.status(401).json({
-//     success: false,
-//     message: "No valid authentication provided.",
-//   });
-// };
-
-// Enable `unless()` usage on middleware
 jwtParser.unless = unless;
 
-// ----------------------------------------
-// 📦 Response Utilities
-// ----------------------------------------
-
-/**
- * Standard error response formatter, supports `ValidationError` or generic fallback.
- */
 export const errorResponseHandler = (error, res) => {
   if (error instanceof ValidationError) {
     return res.status(error.statusCode).json({
@@ -181,20 +96,6 @@ export const successResponseCreated = (res, data) =>
     data,
   });
 
-// Restore this later if partial success logic is reintroduced , e.g found some but not all entities
-// export const partialSuccessResponse = (res, data, errorsPryv, errorsRequest) =>
-//   res.status(207).json({
-//     success: true,
-//     message: "Some errors occurred...",
-//     successfulFacts: data,
-//     errors,
-//     errorsRequest,
-//   });
-
-// ----------------------------------------
-// 🧪 Field & Uniqueness Validation Helpers
-// ----------------------------------------
-
 /**
  * Throws a ValidationError if any field in `fields` is undefined.
  */
@@ -218,9 +119,6 @@ export const checkUnique = (array) => {
   }
 };
 
-// ----------------------------------------
-// ✂️ Object Utilities
-// ----------------------------------------
 
 /**
  * Omits specified keys from an object clone.
@@ -238,70 +136,4 @@ export const omit = (obj, toRemove) => {
   }
 
   return clone;
-};
-
-/**
- * Apply voucher logic to an order.
- * 
- * @param {Object} options 
- * @param {String} options.voucherCode - Code entered by farmer
- * @param {String} options.userId - Farmer ID (for once_per_user check)
- * @param {Number} options.orderTotal - Order total BEFORE discount
- * @returns {Object} - discount amount, freeItems, or error
- */
-export const applyVoucher = async ({ voucherCode, userId, orderTotal }) => {
-  try {
-    const voucher = await db.Voucher.findOne({
-      code: voucherCode,
-      is_deleted: false
-    });
-
-    if (!voucher) {
-      return { error: "Invalid voucher code." };
-    }
-
-    // Check usage limits
-    if (voucher.usage_limit === "once_global" && voucher.total_used > 0) {
-      return { error: "This voucher has already been used." };
-    }
-
-    if (voucher.usage_limit === "once_per_user") {
-      const used = await db.Order.findOne({
-        _user: userId,
-        voucher_code: voucher.code
-      });
-      if (used) {
-        return { error: "You have already used this voucher." };
-      }
-    }
-
-    // Calculate discount
-    let discount = 0;
-
-    if (voucher.discount_type === "percentage") {
-      discount = (voucher.discount_value / 100) * orderTotal;
-    } else if (voucher.discount_type === "fixed") {
-      discount = voucher.discount_value;
-    }
-
-    // Apply max cap if relevant
-    if (voucher.max_discount_amount && discount > voucher.max_discount_amount) {
-      discount = voucher.max_discount_amount;
-    }
-
-    // Prevent over-discounting (can't be higher than total)
-    discount = Math.min(discount, orderTotal);
-    discount = Math.round(discount * 100) / 100; // Round to 2 decimal places
-
-    return {
-      discount,
-      description: voucher.description || "",
-      freeItems: voucher.free_items || 0,
-      error: null
-    };
-
-  } catch (err) {
-    console.error("Error applying voucher:", err);
-    return { error: "Failed to apply voucher." };
-  }
 };
