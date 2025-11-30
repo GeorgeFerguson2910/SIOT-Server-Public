@@ -2,9 +2,13 @@
 logs
 *.log
 npm-debug.log*
+.env
 
-#historical data i sent to my mongo
+#fake cached data for local host server
 data
+
+#forgot to add this to stop the built server from sending to github
+dist/
 
 # Runtime data
 pids
@@ -38,9 +42,6 @@ jspm_packages
 
 # Optional REPL history
 .node_repl_history
-
-# Environment variables of the app
-.env
 
 # DS store shit, for Mac
 .DS_Store

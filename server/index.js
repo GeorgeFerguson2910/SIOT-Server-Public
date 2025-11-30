@@ -12,7 +12,7 @@ initPlantWebSocketServer(server);
 
 // start websocket and server
 server.listen(PORT, () => {
-  console.log(`✅ HTTP+WS server listening on port ${PORT}`);
-  console.log(`👉 HTTP: http://localhost:${PORT}`);
-  console.log(`👉 WS:   ws://localhost:${PORT}/ws/plant`);
+  console.log(` HTTP+WS server listening on port ${PORT}`);
+  console.log(` HTTP: http://localhost:${PORT}`);
+  console.log(` WS:   ws://localhost:${PORT}/ws/plant`);
 });

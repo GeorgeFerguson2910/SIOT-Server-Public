@@ -35,19 +35,18 @@ app.use(
   })
 );
 
-//routes that dont need a login
 app.use(
   jwtParser.unless({
     path: [
       { url: "/user", methods: ["POST"] },
       { url: "/login", methods: ["POST"] },
       { url: "/support-ticket", methods: ["POST"] },
-      { url: "/ingest/plant-reading", methods: ["POST"] },
+      { url: "/incoming/sim-reading", methods: ["POST"] },
+      { url: "/debug/cache", methods: ["GET"] },
     ],
   })
 );
 
-// === Routes ===
 app.use("/", routes);
 
 export default app;
