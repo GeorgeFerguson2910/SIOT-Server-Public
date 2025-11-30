@@ -18,7 +18,6 @@ const adminSchema = new Schema({
     trim: true
   },
 
-  // Store **hashed** password
   password: {
     type: String,
     required: true,
