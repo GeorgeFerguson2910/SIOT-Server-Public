@@ -38,7 +38,7 @@ export async function notifyNewFaults(newlyActiveFaults, context = {}) {
 
   const { device_id, ts } = context;
 
-  rsconsole.log("[faults] New active faults:", {
+  console.log("[faults] New active faults:", {
     device_id: device_id || "unknown",
     ts: ts ? new Date(ts).toISOString() : null,
     faults: newlyActiveFaults,
