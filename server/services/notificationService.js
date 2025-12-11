@@ -1,5 +1,9 @@
+// -------------------------------
+//  services/notificationService.js
+// -------------------------------
+
 async function sendTelegramMessage(text) {
-  // ⬇️ Read from process.env *when the function runs*, not at import time
+  // Always read env at runtime
   const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
   const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
@@ -13,7 +17,6 @@ async function sendTelegramMessage(text) {
   const body = {
     chat_id: TELEGRAM_CHAT_ID,
     text,
-    parse_mode: "Markdown",
   };
 
   try {
@@ -26,6 +29,8 @@ async function sendTelegramMessage(text) {
     if (!res.ok) {
       const txt = await res.text();
       console.error("[notify] Telegram send failed:", res.status, txt);
+    } else {
+      console.log("[notify] Telegram message sent OK");
     }
   } catch (err) {
     console.error("[notify] Telegram error:", err);
@@ -33,11 +38,16 @@ async function sendTelegramMessage(text) {
 }
 
 
+// -------------------------------
+//  Main: Notify about new faults
+// -------------------------------
+
 export async function notifyNewFaults(newlyActiveFaults, context = {}) {
-  if (!newlyActiveFaults.length) return;
+  if (!Array.isArray(newlyActiveFaults) || newlyActiveFaults.length === 0) return;
 
   const { device_id, ts } = context;
 
+  // Server console log
   console.log("[faults] New active faults:", {
     device_id: device_id || "unknown",
     ts: ts ? new Date(ts).toISOString() : null,
@@ -55,8 +65,9 @@ export async function notifyNewFaults(newlyActiveFaults, context = {}) {
   lines.push("");
   lines.push("New active faults:");
 
+  // No Markdown — Telegram-safe
   for (const f of newlyActiveFaults) {
-    lines.push(`• *${f}*`);
+    lines.push(`• ${f}`);
   }
 
   const text = `${title}\n\n${lines.join("\n")}`;
