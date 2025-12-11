@@ -40,12 +40,14 @@ app.use(
     path: [
       { url: "/user", methods: ["POST"] },
       { url: "/login", methods: ["POST"] },
-      { url: "/support-ticket", methods: ["POST"] },
       { url: "/incoming/sim-reading", methods: ["POST"] },
       { url: "/debug/cache", methods: ["GET"] },
+      { url: "/test-notify", methods: ["GET"] },
     ],
   })
 );
+
+
 
 app.use("/", routes);
 

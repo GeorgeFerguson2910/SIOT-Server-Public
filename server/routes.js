@@ -2,8 +2,18 @@ import express from "express";
 
 import authController from "./controllers/authController.js";
 import plantController from "./controllers/plantController.js";
+import { notifyNewFaults } from "./services/notificationService.js";
 
 const routes = express();
+
+routes.get("/test-notify", async (req, res) => {
+  await notifyNewFaults(["test_fault"], {
+    device_id: "test_device",
+    ts: Date.now()
+  });
+
+  res.json({ ok: true, message: "Test notification sent" });
+});
 
 // Status
 routes.get("/", (req, res) => {
@@ -21,6 +31,8 @@ routes.post("/incoming/sim-reading", plantController.incomingSimReading);
 routes.get("/recent/:device_id", plantController.getRecentReadings);
 routes.get("/debug/cache", plantController.debugCache);
 
+// Historic readings from MongoDB
+routes.get("/plant/history", plantController.getHistory);
 
 // Authentication
 routes.post("/login", authController.login);
